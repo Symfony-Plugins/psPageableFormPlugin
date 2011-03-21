@@ -227,3 +227,30 @@ $t->ok($form->getFirstInvalidForm() instanceof Test3Form, 'first invalid form is
 
 $form->bind($fullValues);
 $t->is($form->isValid(), true, 'form is valid');
+
+$form->reset();
+$form->addForm(new Test1Form());
+$form->replaceForm(new Test3Form(), 1);
+
+$t->is($form->getNumberOfForms(), 1);
+$t->isa_ok($form->getForm(1), 'Test3Form');
+
+try
+{
+  $form->getForm(2);
+  $t->fail('expected exception');
+}
+catch(OutOfBoundsException $e)
+{
+  $t->pass();
+}
+
+try
+{
+  $form->replaceForm(new Test1Form(), 2);
+  $t->fail('expected exception');
+}
+catch(OutOfBoundsException $e)
+{
+  $t->pass();
+}

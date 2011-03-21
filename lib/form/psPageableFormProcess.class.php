@@ -24,6 +24,7 @@ class psPageableFormProcess
 
   private $invalidForm = false;
   private $valuesProvides = false;
+  private $clearValuesOnSuccess = true;
 
   /**
    * @param psPageableForm $form Pageable form object
@@ -42,12 +43,22 @@ class psPageableFormProcess
     $this->request = $request;
     $this->valuesProvides = $valuesProvides;
 
-    if(class_exists('sfWebRequest') && $request instanceof sfWebRequest && $request->isMethod('post'))
+    if($request instanceof sfWebRequest && $request->isMethod('post'))
     {
       $this->valuesProvides = true;
     }
 
     $this->setOptions($options);
+  }
+
+  /**
+   * Values from persistance strategy should by clear, when form is fully valid?
+   *
+   * @param bool $flag
+   */
+  public function setClearValuesOnSuccess($flag)
+  {
+    $this->clearValuesOnSuccess = (bool) $flag;
   }
 
   /**
@@ -95,9 +106,20 @@ class psPageableFormProcess
       }
       elseif($page > $this->form->getNumberOfForms())
       {
-        $this->form->getPersistanceStrategy()->clear();
+        if($this->clearValuesOnSuccess)
+        {
+          $this->form->getPersistanceStrategy()->clear();
+        }
+        else
+        {
+          $this->form->persist();
+        }
 
         return true;
+      }
+      else
+      {
+        $this->form->persist();
       }
     }
 

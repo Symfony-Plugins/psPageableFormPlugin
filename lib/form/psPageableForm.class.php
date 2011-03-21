@@ -152,6 +152,13 @@ class psPageableForm implements ArrayAccess
     }
   }
 
+  /**
+   * Set form to passed page. Forms greater and equals of qiven page are shifted by
+   * one page.
+   *
+   * @param sfForm|array $form Form to set
+   * @param int $page Page of form to set
+   */
   public function setForm($form, $page)
   {
     $index = $this->convertPageNumberToIndex($page);
@@ -169,6 +176,21 @@ class psPageableForm implements ArrayAccess
   private function convertIndexToPageNumber($index)
   {
     return ($index+1);
+  }
+
+  /**
+   * Replace form in passed page
+   *
+   * @param sfForm|array $form New form object
+   * @param int $page Page of form to replace
+   */
+  public function replaceForm($form, $page)
+  {
+    $index = $this->convertPageNumberToIndex($page);
+
+     $this->throwExceptionIfFormDosntExist($index);
+
+    $this->doSetForm($form, $index);
   }
 
   private function setFormNameFormat(sfForm $form)
@@ -251,7 +273,18 @@ class psPageableForm implements ArrayAccess
   {
     $index = $this->convertPageNumberToIndex($page);
 
+    $this->throwExceptionIfFormDosntExist($index);
+
     return $this->getAndCreateFormIfNecessary($index);
+  }
+
+  private function throwExceptionIfFormDosntExist($index)
+  {
+    if(!isset($this->forms[$index]))
+    {
+      $page = $this->convertIndexToPageNumber($index);
+      throw new OutOfBoundsException(sprintf('Form %s dosn\'t exist.', $page));
+    }
   }
 
   private function getAndCreateFormIfNecessary($index)
@@ -412,7 +445,7 @@ class psPageableForm implements ArrayAccess
       }
     }
 
-    if($this->getCurrentPageNumber() <= $this->getNumberOfForms())
+    if($this->isValid() && $this->getCurrentPageNumber() <= $this->getNumberOfForms())
     {
       $defaultValues = $this->getValuesForForm($this->getCurrentForm(), $taintedValues);
       $form = $this->getCurrentForm();
@@ -491,7 +524,7 @@ class psPageableForm implements ArrayAccess
     return ($this->isUseGlobalNamespace() ? false : $this->getFormKeyNames($form));
   }
 
-  private function buildValuesForForm(sfForm $form, array $values)
+  protected function buildValuesForForm(sfForm $form, array $values)
   {
     $fields = $form->getWidgetSchema()->getFields();
 
